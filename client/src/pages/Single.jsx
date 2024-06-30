@@ -1,77 +1,77 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Edit from "../img/edit.png";
 import Delete from "../img/delete.png";
 import Menu from "../components/Menu";
+import { useContext, useEffect, useState } from "react";
+import axios from "axios";
+import moment from "moment";
+import { AuthContext } from "../context/authContext";
+
+const api = axios.create({
+  baseURL: "http://localhost:8800/api",
+  withCredentials: true,
+});
+
 const Single = () => {
+  const [post, setPost] = useState({});
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const postID = location.pathname.split("/")[2];
+
+  const { currentUser } = useContext(AuthContext);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get(`/posts/${postID}`);
+        setPost(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchData();
+  }, [postID]);
+
+  const handleDelete = async () => {
+    try {
+      console.log(`/posts/${postID}`);
+      await api.delete(`/posts/${postID}`);
+      navigate("/");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getText = (html) => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent;
+  };
+
   return (
     <div className="single">
       <div className="content">
-        <img
-          src="https://images.unsplash.com/photo-1719405889479-7ea7b2be7317?q=80&w=2075&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-          alt=""
-        />
+        <img src={`../upload/${post?.img}`} alt="" />
         <div className="user">
-          <img
-            src="https://ashallendesign.ams3.cdn.digitaloceanspaces.com/rMbsGOyK6i1KjNkbXff8qLohzM1nWQA8HNGwHF0J.png"
-            alt=""
-          />
+          {post.userImg && <img src={post.userImg} alt="" />}
           <div className="info">
-            <span>John</span>
-            <p>Posted 2 days ago</p>
+            <span>{post.username}</span>
+            <p>Posted {moment(post.date).fromNow()}</p>
           </div>
-          <div className="edit">
-            <Link to="/write?edit=2">
-              <img src={Edit} alt="" />
-            </Link>
-            <img src={Delete} alt="" />
-          </div>
+          {currentUser.username === post.username && (
+            <div className="edit">
+              <Link to={`/write?edit=2`} state={post}>
+                <img src={Edit} alt="" />
+              </Link>
+              <img onClick={handleDelete} src={Delete} alt="" />
+            </div>
+          )}
         </div>
-        <h1>Lorem ipsum dolor sit amet consectetur.</h1>
-        <p>
-          Lorem, ipsum dolor sit amet consectetur adipisicing elit. Nulla sed
-          aut ullam. Et non, cupiditate necessitatibus nisi nemo iure esse nam
-          doloribus perferendis aliquid eius dolorem voluptatum veniam, cumque
-          pariatur autem accusantium doloremque sapiente. Eligendi nesciunt
-          excepturi cumque delectus dicta at cum ipsam omnis recusandae quia
-          eveniet nisi atque, expedita dignissimos blanditiis similique quaerat.
-          Ipsa fugiat et quos repellat id. Consequatur voluptatum cum quisquam
-          non voluptatem nulla quia, amet eaque dignissimos cumque adipisci
-          delectus error omnis eum quis asperiores id distinctio numquam
-          exercitationem voluptates assumenda tempora molestias voluptatibus!
-          Doloremque sapiente deleniti iusto culpa aspernatur neque cupiditate
-          debitis maiores voluptate provident!
-        </p>
-        <p>
-          Lorem, ipsum dolor sit amet consectetur adipisicing elit. Nulla sed
-          aut ullam. Et non, cupiditate necessitatibus nisi nemo iure esse nam
-          doloribus perferendis aliquid eius dolorem voluptatum veniam, cumque
-          pariatur autem accusantium doloremque sapiente. Eligendi nesciunt
-          excepturi cumque delectus dicta at cum ipsam omnis recusandae quia
-          eveniet nisi atque, expedita dignissimos blanditiis similique quaerat.
-          Ipsa fugiat et quos repellat id. Consequatur voluptatum cum quisquam
-          non voluptatem nulla quia, amet eaque dignissimos cumque adipisci
-          delectus error omnis eum quis asperiores id distinctio numquam
-          exercitationem voluptates assumenda tempora molestias voluptatibus!
-          Doloremque sapiente deleniti iusto culpa aspernatur neque cupiditate
-          debitis maiores voluptate provident!
-        </p>
-        <p>
-          Lorem, ipsum dolor sit amet consectetur adipisicing elit. Nulla sed
-          aut ullam. Et non, cupiditate necessitatibus nisi nemo iure esse nam
-          doloribus perferendis aliquid eius dolorem voluptatum veniam, cumque
-          pariatur autem accusantium doloremque sapiente. Eligendi nesciunt
-          excepturi cumque delectus dicta at cum ipsam omnis recusandae quia
-          eveniet nisi atque, expedita dignissimos blanditiis similique quaerat.
-          Ipsa fugiat et quos repellat id. Consequatur voluptatum cum quisquam
-          non voluptatem nulla quia, amet eaque dignissimos cumque adipisci
-          delectus error omnis eum quis asperiores id distinctio numquam
-          exercitationem voluptates assumenda tempora molestias voluptatibus!
-          Doloremque sapiente deleniti iusto culpa aspernatur neque cupiditate
-          debitis maiores voluptate provident!
-        </p>
+        <h1>{post.title}</h1>
+        {getText(post.desc)}
       </div>
       <div className="menu">
-        <Menu />
+        <Menu category={post.category} />
       </div>
     </div>
   );
